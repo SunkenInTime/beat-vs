@@ -2,14 +2,19 @@
 
 ## Cursor Cloud specific instructions
 
-This repository (`beat-vs`) is currently an empty/scaffolding repo with only a `README.md`. There are no source files, dependencies, build systems, services, or tests defined yet.
+This is a React + TypeScript + Vite web app — a Scratch-style beat builder powered by the Strudel runtime. See `README.md` for architecture overview and visual-blocks-to-Strudel mapping.
 
-- **No dependencies to install** — no `package.json`, `requirements.txt`, `go.mod`, `Cargo.toml`, or any other dependency manifest exists.
-- **No services to run** — no application code, Docker configurations, or dev server scripts are present.
-- **No tests or lint** — no test framework or linter is configured.
+### Quick reference
 
-When the codebase is populated with actual application code, this section should be updated with:
-1. How to install dependencies and which package manager to use.
-2. How to run the dev server(s) and any required backing services.
-3. How to run tests and linting.
-4. Any non-obvious gotchas discovered during setup.
+| Task | Command |
+|---|---|
+| Install deps | `npm install` |
+| Dev server | `npm run dev` (Vite, default port 5173) |
+| Type check | `tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json` |
+| Production build | `npm run build` (runs type check then `vite build`) |
+| Preview prod build | `npm run preview` |
+
+- No lint or test scripts are configured yet. Type checking via `tsc --noEmit` is the only static analysis available.
+- The production build emits a large chunk warning because `@strudel/web` ships substantial runtime code — this is expected and does not indicate a problem.
+- Audio playback requires a user gesture (click "Play") before Web Audio can start in the browser.
+- The app uses `localStorage` for draft persistence (`src/sync/persistence.ts`).
