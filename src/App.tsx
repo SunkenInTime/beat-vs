@@ -69,7 +69,7 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState(
     'Press play to unlock audio and load Strudel drum samples.',
   );
-  const lastPlayedCodeRef = useRef<string>();
+  const lastPlayedCodeRef = useRef<string | undefined>(undefined);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
