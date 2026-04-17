@@ -893,6 +893,9 @@ button {
 .track-name-field {
   display: grid;
   gap: 4px;
+  align-self: start;
+  max-width: 11rem;
+  width: 100%;
 }
 
 .track-name-field label {
@@ -904,6 +907,8 @@ button {
 }
 
 .track-name-field input {
+  width: 100%;
+  min-width: 0;
   padding: 10px 12px;
   background: var(--chrome-0);
   border: 1px solid var(--rail);
@@ -977,6 +982,7 @@ button {
 .lane__header {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   min-width: 0;
 }
 
