@@ -42,7 +42,8 @@ export function BlockCard({
   });
 
   const style: CSSProperties = {
-    transform: CSS.Translate.toString(transform),
+    transform: isDragging ? undefined : CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.22 : undefined,
     '--block-accent': selected && accentColor ? accentColor : undefined,
   } as CSSProperties;
 
@@ -50,6 +51,7 @@ export function BlockCard({
     <div
       ref={setNodeRef}
       className="block-card"
+      data-dragging={isDragging ? 'true' : 'false'}
       style={style}
       onClick={(event) => {
         event.stopPropagation();

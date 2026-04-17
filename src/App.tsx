@@ -275,6 +275,7 @@ export default function App() {
 
   return (
     <DndContext
+      autoScroll={false}
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}

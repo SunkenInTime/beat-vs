@@ -25,7 +25,11 @@ function TemplateChip({ template }: { template: BlockTemplate }) {
       ref={setNodeRef}
       type="button"
       className="palette-chip"
-      style={{ transform: CSS.Translate.toString(transform) }}
+      data-dragging={isDragging ? 'true' : 'false'}
+      style={{
+        transform: isDragging ? undefined : CSS.Translate.toString(transform),
+        opacity: isDragging ? 0.4 : undefined,
+      }}
       {...listeners}
       {...attributes}
     >
