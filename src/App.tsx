@@ -11,31 +11,32 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CodePreview } from './components/CodePreview';
-import { InspectorPanel } from './components/InspectorPanel';
 import { Palette } from './components/Palette';
 import { TransportControls } from './components/TransportControls';
 import { Workspace } from './components/Workspace';
+import { ScratchBlock, type ScratchBlockData } from './components/ScratchBlock';
 import { compileDocument } from './editor/compiler';
 import { paletteTemplates } from './editor/defaults';
-import { findBlockById, getContainerType } from './editor/tree';
+import { getContainerType } from './editor/tree';
 import { useEditorStore } from './editor/store';
+import type { StepBlock, Track } from './editor/types';
 import { strudelEngine } from './engine/strudelEngine';
 import { localDraftPersistence } from './sync/persistence';
 
 type ActiveDrag =
   | {
       dragType: 'template';
-      label: string;
       templateId: string;
       category: 'steps' | 'modifiers';
+      preview: ScratchBlockData;
     }
   | {
       dragType: 'block';
-      label: string;
       blockId: string;
       scope: 'steps' | 'modifiers';
       containerId: string;
       index: number;
+      preview: ScratchBlockData;
     };
 
 interface SlotData {
@@ -44,6 +45,41 @@ interface SlotData {
   index: number;
   containerType: 'steps' | 'modifiers';
 }
+
+interface PaletteDeleteData {
+  dropType: 'palette-delete';
+}
+
+interface TimelineStep {
+  blockId: string;
+  parentRepeatIds: string[];
+}
+
+const flattenStepTimeline = (
+  blocks: StepBlock[],
+  parentRepeatIds: string[] = [],
+): TimelineStep[] =>
+  blocks.flatMap((block) => {
+    if (block.kind === 'repeat') {
+      const repeatCount = Math.max(1, block.times);
+      return Array.from({ length: repeatCount }, () =>
+        flattenStepTimeline(block.children, [...parentRepeatIds, block.id]),
+      ).flat();
+    }
+
+    return [{ blockId: block.id, parentRepeatIds }];
+  });
+
+const getActiveStepIdsForTrack = (track: Track, cycleProgress: number): string[] => {
+  const timeline = flattenStepTimeline(track.steps);
+  if (timeline.length === 0) {
+    return [];
+  }
+
+  const stepIndex = Math.floor(cycleProgress * timeline.length) % timeline.length;
+  const activeStep = timeline[stepIndex];
+  return [activeStep.blockId, ...activeStep.parentRepeatIds];
+};
 
 export default function App() {
   const tempo = useEditorStore((state) => state.tempo);
@@ -58,18 +94,20 @@ export default function App() {
   const moveBlock = useEditorStore((state) => state.moveBlock);
   const deleteBlock = useEditorStore((state) => state.deleteBlock);
   const selectBlock = useEditorStore((state) => state.selectBlock);
-  const updateSampleBlock = useEditorStore((state) => state.updateSampleBlock);
-  const updateRepeatBlock = useEditorStore((state) => state.updateRepeatBlock);
-  const updateModifierValue = useEditorStore((state) => state.updateModifierValue);
 
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [playbackClockMs, setPlaybackClockMs] = useState(0);
   const [statusMessage, setStatusMessage] = useState(
-    'Press play to unlock audio and load Strudel drum samples.',
+    'Press play to unlock audio and load drum samples.',
+  );
+  const [statusState, setStatusState] = useState<'idle' | 'loading' | 'playing' | 'error'>(
+    'idle',
   );
   const lastPlayedCodeRef = useRef<string | undefined>(undefined);
+  const playbackStartedAtRef = useRef<number | undefined>(undefined);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -81,10 +119,6 @@ export default function App() {
 
   const document = useMemo(() => ({ tempo, tracks }), [tempo, tracks]);
   const compiledCode = useMemo(() => compileDocument(document), [document]);
-  const selectedBlock = useMemo(
-    () => (selectedBlockId ? findBlockById(tracks, selectedBlockId) : undefined),
-    [selectedBlockId, tracks],
-  );
 
   useEffect(() => {
     const saved = localDraftPersistence.load();
@@ -116,19 +150,61 @@ export default function App() {
 
   useEffect(() => () => strudelEngine.stop(), []);
 
+  useEffect(() => {
+    if (!isPlaying || playbackStartedAtRef.current === undefined) {
+      return;
+    }
+
+    const tick = () => setPlaybackClockMs(performance.now());
+    tick();
+    const intervalId = window.setInterval(tick, 45);
+
+    return () => window.clearInterval(intervalId);
+  }, [isPlaying]);
+
+  const cycleProgress = useMemo(() => {
+    if (!isPlaying || playbackStartedAtRef.current === undefined) {
+      return 0;
+    }
+
+    const cycleDurationMs = 60_000 / Math.max(1, tempo);
+    const elapsedMs = Math.max(0, playbackClockMs - playbackStartedAtRef.current);
+    return (elapsedMs % cycleDurationMs) / cycleDurationMs;
+  }, [isPlaying, playbackClockMs, tempo]);
+
+  const activeStepBlockIds = useMemo(() => {
+    if (!isPlaying || playbackStartedAtRef.current === undefined) {
+      return new Set<string>();
+    }
+
+    const activeIds = new Set<string>();
+    tracks.forEach((track) => {
+      getActiveStepIdsForTrack(track, cycleProgress).forEach((blockId) => activeIds.add(blockId));
+    });
+
+    return activeIds;
+  }, [isPlaying, cycleProgress, tracks]);
+
   const runPlayback = async (code: string) => {
     setIsLoading(true);
-    setStatusMessage('Initializing Strudel and evaluating the generated code...');
+    setStatusMessage('Booting Strudel · evaluating pattern…');
+    setStatusState('loading');
 
     try {
       await strudelEngine.play(code);
       lastPlayedCodeRef.current = code;
+      playbackStartedAtRef.current = performance.now();
+      setPlaybackClockMs(playbackStartedAtRef.current);
       setIsPlaying(true);
-      setStatusMessage('Playing the compiled Strudel pattern.');
+      setStatusMessage('Live · pattern playing');
+      setStatusState('playing');
     } catch (error) {
       console.error(error);
+      playbackStartedAtRef.current = undefined;
+      setPlaybackClockMs(0);
       setIsPlaying(false);
-      setStatusMessage('Playback failed. Check the console and try again.');
+      setStatusMessage('Playback failed — check the console.');
+      setStatusState('error');
     } finally {
       setIsLoading(false);
     }
@@ -141,8 +217,11 @@ export default function App() {
   const handleStop = () => {
     strudelEngine.stop();
     lastPlayedCodeRef.current = undefined;
+    playbackStartedAtRef.current = undefined;
+    setPlaybackClockMs(0);
     setIsPlaying(false);
     setStatusMessage('Stopped.');
+    setStatusState('idle');
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -152,10 +231,21 @@ export default function App() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const activeData = event.active.data.current as ActiveDrag | undefined;
-    const overData = event.over?.data.current as SlotData | undefined;
+    const overData = event.over?.data.current as SlotData | PaletteDeleteData | undefined;
     setActiveDrag(null);
 
-    if (!activeData || overData?.dropType !== 'slot') {
+    if (!activeData || !overData) {
+      return;
+    }
+
+    if (overData.dropType === 'palette-delete') {
+      if (activeData.dragType === 'block') {
+        deleteBlock(activeData.blockId);
+      }
+      return;
+    }
+
+    if (overData.dropType !== 'slot') {
       return;
     }
 
@@ -190,65 +280,69 @@ export default function App() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="app-shell">
-        <header className="hero-card">
-          <div>
-            <p className="eyebrow">React + TypeScript + real Strudel</p>
-            <h1>Beat VS</h1>
-            <p className="hero-copy">
-              Build live beats with Scratch-style blocks, then compile them into actual Strudel
-              code under the hood.
+      <div className={`app-shell ${activeDrag ? 'is-dragging' : ''}`}>
+        <header className="masthead">
+          <div className="masthead__brand">
+            <p className="masthead__tag">React · TypeScript · Strudel Engine</p>
+            <h1 className="masthead__title">
+              BEAT<span className="accent">·</span>VS
+            </h1>
+            <p className="masthead__copy">
+              A Scratch-style block language wired into a DAW timeline. Snap puzzle-blocks into
+              tracks, stack them as layers, and let the compiler fire live Strudel patterns.
             </p>
           </div>
+
           <TransportControls
             tempo={tempo}
             isPlaying={isPlaying}
             isLoading={isLoading}
             statusMessage={statusMessage}
+            statusState={statusState}
             onTempoChange={setTempo}
             onPlay={handlePlay}
             onStop={handleStop}
           />
         </header>
 
-        <main className="layout-grid">
+        <main
+          className="layout-grid"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              selectBlock(undefined);
+            }
+          }}
+        >
           <aside className="left-rail">
             <Palette templates={paletteTemplates} />
           </aside>
 
-          <section
-            className="center-rail"
-            onClick={(event) => {
-              if (event.target === event.currentTarget) {
-                selectBlock(undefined);
-              }
-            }}
-          >
+          <section className="center-rail">
             <Workspace
               tracks={tracks}
               selectedBlockId={selectedBlockId}
+              activeStepBlockIds={activeStepBlockIds}
+              playheadProgress={cycleProgress}
+              isPlaying={isPlaying}
               onAddTrack={addTrack}
               onRenameTrack={renameTrack}
               onRemoveTrack={removeTrack}
               onSelectBlock={(blockId) => selectBlock(blockId)}
             />
           </section>
-
-          <aside className="right-rail">
-            <InspectorPanel
-              selectedBlock={selectedBlock}
-              onUpdateSample={updateSampleBlock}
-              onUpdateRepeat={updateRepeatBlock}
-              onUpdateModifier={updateModifierValue}
-              onDelete={deleteBlock}
-            />
-            <CodePreview code={compiledCode} />
-          </aside>
         </main>
+
+        <section className="code-section">
+          <CodePreview code={compiledCode} />
+        </section>
       </div>
 
       <DragOverlay>
-        {activeDrag ? <div className="drag-overlay">{activeDrag.label}</div> : null}
+        {activeDrag ? (
+          <div className="drag-overlay">
+            <ScratchBlock data={activeDrag.preview} dragging />
+          </div>
+        ) : null}
       </DragOverlay>
     </DndContext>
   );

@@ -3,28 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { CSSProperties, ReactNode } from 'react';
 
 import type { ModifierBlock, StepBlock } from '../editor/types';
-
-const getBlockText = (block: StepBlock | ModifierBlock): { title: string; subtitle: string } => {
-  if ('value' in block) {
-    const label =
-      block.kind === 'gain'
-        ? `Gain ${block.value.toFixed(2)}`
-        : block.kind === 'pan'
-          ? `Pan ${block.value.toFixed(2)}`
-          : `${block.kind === 'fast' ? 'Fast' : 'Slow'} ${block.value.toFixed(2)}`;
-    return { title: label, subtitle: 'Track modifier' };
-  }
-
-  if (block.kind === 'sample') {
-    return { title: block.sample, subtitle: 'Drum sample' };
-  }
-
-  if (block.kind === 'rest') {
-    return { title: 'Rest', subtitle: 'Silence' };
-  }
-
-  return { title: `Repeat x${block.times}`, subtitle: 'Nested pattern' };
-};
+import { ScratchBlock, getScratchBlockDataFromBlock } from './ScratchBlock';
 
 interface BlockCardProps {
   block: StepBlock | ModifierBlock;
@@ -32,6 +11,7 @@ interface BlockCardProps {
   containerId: string;
   index: number;
   selected: boolean;
+  playing?: boolean;
   accentColor?: string;
   children?: ReactNode;
   onSelect: (blockId: string) => void;
@@ -43,11 +23,12 @@ export function BlockCard({
   containerId,
   index,
   selected,
+  playing = false,
   accentColor,
   children,
   onSelect,
 }: BlockCardProps) {
-  const { title, subtitle } = getBlockText(block);
+  const preview = getScratchBlockDataFromBlock(block);
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `block-${block.id}`,
     data: {
@@ -56,21 +37,19 @@ export function BlockCard({
       scope,
       containerId,
       index,
-      label: title,
+      preview,
     },
   });
 
   const style: CSSProperties = {
     transform: CSS.Translate.toString(transform),
-    borderColor: selected && accentColor ? accentColor : undefined,
-  };
+    '--block-accent': selected && accentColor ? accentColor : undefined,
+  } as CSSProperties;
 
   return (
     <div
       ref={setNodeRef}
-      className={`block-card block-card--${scope} block-card--${block.kind} ${
-        isDragging ? 'is-dragging' : ''
-      } ${selected ? 'is-selected' : ''}`}
+      className="block-card"
       style={style}
       onClick={(event) => {
         event.stopPropagation();
@@ -79,11 +58,9 @@ export function BlockCard({
       {...listeners}
       {...attributes}
     >
-      <div className="block-card__header">
-        <strong>{title}</strong>
-        <span>{subtitle}</span>
-      </div>
-      {children}
+      <ScratchBlock data={preview} dragging={isDragging} selected={selected} playing={playing}>
+        {children}
+      </ScratchBlock>
     </div>
   );
 }

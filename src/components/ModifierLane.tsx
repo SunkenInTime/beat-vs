@@ -18,29 +18,34 @@ export function ModifierLane({
   onSelect,
 }: ModifierLaneProps) {
   return (
-    <div className="modifier-lane">
-      <DropSlot containerId={containerId} index={0} containerType="modifiers" />
+    <div className="lane lane--modifiers">
+      <div className="lane__header">
+        <span className="lane__label" data-kind="fx">
+          FX Chain
+        </span>
+      </div>
+      <div className="lane__content">
+        <DropSlot containerId={containerId} index={0} containerType="modifiers" />
 
-      {blocks.length === 0 ? (
-        <div className="empty-container-hint empty-container-hint--modifier">
-          Drop modifier blocks here
-        </div>
-      ) : (
-        blocks.map((block, index) => (
-          <div key={block.id} className="sequence-item">
-            <BlockCard
-              block={block}
-              scope="modifiers"
-              containerId={containerId}
-              index={index}
-              selected={selectedBlockId === block.id}
-              accentColor={trackColor}
-              onSelect={onSelect}
-            />
-            <DropSlot containerId={containerId} index={index + 1} containerType="modifiers" />
-          </div>
-        ))
-      )}
+        {blocks.length === 0 ? (
+          <div className="lane__empty">drop fx to shape this track</div>
+        ) : (
+          blocks.map((block, index) => (
+            <div key={block.id} className="sequence-item">
+              <BlockCard
+                block={block}
+                scope="modifiers"
+                containerId={containerId}
+                index={index}
+                selected={selectedBlockId === block.id}
+                accentColor={trackColor}
+                onSelect={onSelect}
+              />
+              <DropSlot containerId={containerId} index={index + 1} containerType="modifiers" />
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }

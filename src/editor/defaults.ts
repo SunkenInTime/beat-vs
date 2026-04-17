@@ -1,6 +1,5 @@
 import type { BlockTemplate, DrumSample, EditorDocument, ModifierKind, Track } from './types';
-
-const createId = () => crypto.randomUUID();
+import { createId } from './id';
 
 const sample = (value: DrumSample) => ({
   id: createId(),

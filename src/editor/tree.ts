@@ -1,4 +1,5 @@
 import { createDefaultTrack, paletteTemplates } from './defaults';
+import { createId } from './id';
 import type {
   BlockTemplate,
   ContainerType,
@@ -132,7 +133,7 @@ const removeModifierBlock = (
 };
 
 const createStepBlock = (template: Extract<BlockTemplate, { category: 'steps' }>): StepBlock => {
-  const id = crypto.randomUUID();
+  const id = createId();
 
   if (template.kind === 'sample' && template.sample) {
     return {
@@ -160,7 +161,7 @@ const createStepBlock = (template: Extract<BlockTemplate, { category: 'steps' }>
 const createModifierBlock = (
   template: Extract<BlockTemplate, { category: 'modifiers' }>,
 ): ModifierBlock => ({
-  id: crypto.randomUUID(),
+  id: createId(),
   kind: template.kind,
   value: template.defaultValue,
 });

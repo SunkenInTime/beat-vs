@@ -5,16 +5,10 @@ import type { ContainerType } from '../editor/types';
 interface DropSlotProps {
   containerId: string;
   index: number;
-  orientation?: 'horizontal' | 'vertical';
   containerType: ContainerType;
 }
 
-export function DropSlot({
-  containerId,
-  index,
-  orientation = 'horizontal',
-  containerType,
-}: DropSlotProps) {
+export function DropSlot({ containerId, index, containerType }: DropSlotProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `slot-${containerId}-${index}`,
     data: {
@@ -28,7 +22,7 @@ export function DropSlot({
   return (
     <div
       ref={setNodeRef}
-      className={`drop-slot drop-slot--${orientation} ${isOver ? 'is-over' : ''}`}
+      className={`drop-slot ${isOver ? 'is-over' : ''}`}
       aria-hidden="true"
     />
   );

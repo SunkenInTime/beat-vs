@@ -2,6 +2,7 @@ import { evaluate, hush, initStrudel, samples } from '@strudel/web';
 
 class StrudelEngine {
   private initPromise?: Promise<void>;
+  private isInitialized = false;
 
   async ready(): Promise<void> {
     if (!this.initPromise) {
@@ -9,7 +10,9 @@ class StrudelEngine {
         initStrudel({
           prebake: () => samples('github:tidalcycles/dirt-samples'),
         }),
-      );
+      ).then(() => {
+        this.isInitialized = true;
+      });
     }
 
     return this.initPromise;
@@ -22,6 +25,10 @@ class StrudelEngine {
   }
 
   stop(): void {
+    if (!this.isInitialized) {
+      return;
+    }
+
     hush();
   }
 }

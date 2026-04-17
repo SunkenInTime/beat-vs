@@ -5,9 +5,16 @@ interface CodePreviewProps {
 export function CodePreview({ code }: CodePreviewProps) {
   return (
     <section className="panel code-panel">
-      <div className="panel__header">
-        <h2>Generated Strudel code</h2>
-        <p>The visual editor compiles directly into runnable Strudel.</p>
+      <div className="code-panel__header">
+        <div>
+          <p className="panel__eyebrow">Output · strudel.cc</p>
+          <h2 className="panel__title">Compiled pattern</h2>
+        </div>
+        <div className="code-panel__chips" aria-hidden="true">
+          <span className="code-panel__chip" />
+          <span className="code-panel__chip" />
+          <span className="code-panel__chip" />
+        </div>
       </div>
 
       <pre className="code-preview">
