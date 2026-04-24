@@ -1,4 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
+import type { ReactNode } from 'react';
 
 import type { ContainerType } from '../editor/types';
 
@@ -6,9 +7,17 @@ interface DropSlotProps {
   containerId: string;
   index: number;
   containerType: ContainerType;
+  className?: string;
+  children?: ReactNode;
 }
 
-export function DropSlot({ containerId, index, containerType }: DropSlotProps) {
+export function DropSlot({
+  containerId,
+  index,
+  containerType,
+  className,
+  children,
+}: DropSlotProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `slot-${containerId}-${index}`,
     data: {
@@ -22,8 +31,9 @@ export function DropSlot({ containerId, index, containerType }: DropSlotProps) {
   return (
     <div
       ref={setNodeRef}
-      className={`drop-slot ${isOver ? 'is-over' : ''}`}
-      aria-hidden="true"
-    />
+      className={['drop-slot', className, isOver ? 'is-over' : ''].filter(Boolean).join(' ')}
+    >
+      {children}
+    </div>
   );
 }

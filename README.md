@@ -81,12 +81,12 @@ The current compiler keeps the mapping intentionally simple and valid:
 - pan block -> `.pan(value)`
 - fast block -> `.fast(value)`
 - slow block -> `.slow(value)`
-- tempo slider -> `setcpm(...)`
+- tempo slider -> `setcpm(bpm / 4)` so the UI BPM matches Strudel's cycles-per-minute timing in 4/4
 
 Example generated code:
 
 ```js
-setcpm(120)
+setcpm(120 / 4)
 stack(
   s("bd hh sd hh [bd hh]*2").gain(0.95),
   s("~ ~ cp ~").gain(0.7).pan(0.35)

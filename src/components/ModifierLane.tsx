@@ -17,6 +17,8 @@ export function ModifierLane({
   selectedBlockId,
   onSelect,
 }: ModifierLaneProps) {
+  const cellCount = Math.max(blocks.length + 1, 16);
+
   return (
     <div className="lane lane--modifiers">
       <div className="lane__header">
@@ -25,26 +27,37 @@ export function ModifierLane({
         </span>
       </div>
       <div className="lane__content">
-        <DropSlot containerId={containerId} index={0} containerType="modifiers" />
+        <div className="lane__grid" style={{ ['--lane-columns' as string]: cellCount }}>
+          {Array.from({ length: cellCount }, (_, index) => {
+            const block = blocks[index];
 
-        {blocks.length === 0 ? (
-          <div className="lane__empty">drop fx to shape this track</div>
-        ) : (
-          blocks.map((block, index) => (
-            <div key={block.id} className="sequence-item">
-              <BlockCard
-                block={block}
-                scope="modifiers"
+            return (
+              <DropSlot
+                key={block?.id ?? `${containerId}-slot-${index}`}
                 containerId={containerId}
-                index={index}
-                selected={selectedBlockId === block.id}
-                accentColor={trackColor}
-                onSelect={onSelect}
-              />
-              <DropSlot containerId={containerId} index={index + 1} containerType="modifiers" />
-            </div>
-          ))
-        )}
+                index={Math.min(index, blocks.length)}
+                containerType="modifiers"
+                className={`lane-cell ${block ? 'lane-cell--filled' : 'lane-cell--empty'}`}
+              >
+                {block ? (
+                  <BlockCard
+                    block={block}
+                    scope="modifiers"
+                    containerId={containerId}
+                    index={index}
+                    selected={selectedBlockId === block.id}
+                    accentColor={trackColor}
+                    onSelect={onSelect}
+                  />
+                ) : null}
+              </DropSlot>
+            );
+          })}
+
+          {blocks.length === 0 ? (
+            <div className="lane__empty">drop fx to shape this track</div>
+          ) : null}
+        </div>
       </div>
     </div>
   );

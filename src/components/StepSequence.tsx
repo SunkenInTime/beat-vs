@@ -24,21 +24,24 @@ export function StepSequence({
   nested = false,
   onSelect,
 }: StepSequenceProps) {
+  const cellCount = Math.max(blocks.length + 1, nested ? 4 : 16);
+
   const content = (
-    <>
-      <DropSlot containerId={containerId} index={0} containerType="steps" />
+    <div className="lane__grid" style={{ ['--lane-columns' as string]: cellCount }}>
+      {Array.from({ length: cellCount }, (_, index) => {
+        const block = blocks[index];
+        const childContainerId =
+          block?.kind === 'repeat' ? makeRepeatContainerId(trackId, block.id) : undefined;
 
-      {blocks.length === 0 ? (
-        <div className="lane__empty">
-          {nested ? 'drop beats inside the repeat' : 'drop beat blocks onto the grid'}
-        </div>
-      ) : (
-        blocks.map((block, index) => {
-          const childContainerId =
-            block.kind === 'repeat' ? makeRepeatContainerId(trackId, block.id) : undefined;
-
-          return (
-            <div key={block.id} className="sequence-item">
+        return (
+          <DropSlot
+            key={block?.id ?? `${containerId}-slot-${index}`}
+            containerId={containerId}
+            index={Math.min(index, blocks.length)}
+            containerType="steps"
+            className={`lane-cell ${block ? 'lane-cell--filled' : 'lane-cell--empty'}`}
+          >
+            {block ? (
               <BlockCard
                 block={block}
                 scope="steps"
@@ -62,12 +65,17 @@ export function StepSequence({
                   />
                 ) : null}
               </BlockCard>
-              <DropSlot containerId={containerId} index={index + 1} containerType="steps" />
-            </div>
-          );
-        })
-      )}
-    </>
+            ) : null}
+          </DropSlot>
+        );
+      })}
+
+      {blocks.length === 0 ? (
+        <div className="lane__empty">
+          {nested ? 'drop beats inside the repeat' : 'drop beat blocks onto the grid'}
+        </div>
+      ) : null}
+    </div>
   );
 
   if (nested) {

@@ -10,6 +10,7 @@ declare module '@strudel/web' {
     hushFirst?: boolean,
   ): Promise<unknown>;
   export function hush(): void;
+  export function getTime(): number;
   export function setcpm(value: number): unknown;
   export function samples(source: string): unknown;
 }

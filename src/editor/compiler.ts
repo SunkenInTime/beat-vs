@@ -53,4 +53,4 @@ export const compilePatternOnly = (document: EditorDocument): string => {
 };
 
 export const compileDocument = (document: EditorDocument): string =>
-  `setcpm(${document.tempo})\n${compilePatternOnly(document)}`;
+  `setcpm(${document.tempo} / 4)\n${compilePatternOnly(document)}`;

@@ -99,7 +99,7 @@ export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [playbackClockMs, setPlaybackClockMs] = useState(0);
+  const [playbackCycle, setPlaybackCycle] = useState(0);
   const [statusMessage, setStatusMessage] = useState(
     'Press play to unlock audio and load drum samples.',
   );
@@ -107,7 +107,6 @@ export default function App() {
     'idle',
   );
   const lastPlayedCodeRef = useRef<string | undefined>(undefined);
-  const playbackStartedAtRef = useRef<number | undefined>(undefined);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -151,29 +150,31 @@ export default function App() {
   useEffect(() => () => strudelEngine.stop(), []);
 
   useEffect(() => {
-    if (!isPlaying || playbackStartedAtRef.current === undefined) {
+    if (!isPlaying) {
       return;
     }
 
-    const tick = () => setPlaybackClockMs(performance.now());
-    tick();
-    const intervalId = window.setInterval(tick, 45);
+    let animationFrameId = 0;
+    const tick = () => {
+      setPlaybackCycle(strudelEngine.getCycle());
+      animationFrameId = window.requestAnimationFrame(tick);
+    };
 
-    return () => window.clearInterval(intervalId);
+    tick();
+
+    return () => window.cancelAnimationFrame(animationFrameId);
   }, [isPlaying]);
 
   const cycleProgress = useMemo(() => {
-    if (!isPlaying || playbackStartedAtRef.current === undefined) {
+    if (!isPlaying) {
       return 0;
     }
 
-    const cycleDurationMs = 60_000 / Math.max(1, tempo);
-    const elapsedMs = Math.max(0, playbackClockMs - playbackStartedAtRef.current);
-    return (elapsedMs % cycleDurationMs) / cycleDurationMs;
-  }, [isPlaying, playbackClockMs, tempo]);
+    return ((playbackCycle % 1) + 1) % 1;
+  }, [isPlaying, playbackCycle]);
 
   const activeStepBlockIds = useMemo(() => {
-    if (!isPlaying || playbackStartedAtRef.current === undefined) {
+    if (!isPlaying) {
       return new Set<string>();
     }
 
@@ -193,15 +194,13 @@ export default function App() {
     try {
       await strudelEngine.play(code);
       lastPlayedCodeRef.current = code;
-      playbackStartedAtRef.current = performance.now();
-      setPlaybackClockMs(playbackStartedAtRef.current);
+      setPlaybackCycle(strudelEngine.getCycle());
       setIsPlaying(true);
       setStatusMessage('Live · pattern playing');
       setStatusState('playing');
     } catch (error) {
       console.error(error);
-      playbackStartedAtRef.current = undefined;
-      setPlaybackClockMs(0);
+      setPlaybackCycle(0);
       setIsPlaying(false);
       setStatusMessage('Playback failed — check the console.');
       setStatusState('error');
@@ -217,8 +216,7 @@ export default function App() {
   const handleStop = () => {
     strudelEngine.stop();
     lastPlayedCodeRef.current = undefined;
-    playbackStartedAtRef.current = undefined;
-    setPlaybackClockMs(0);
+    setPlaybackCycle(0);
     setIsPlaying(false);
     setStatusMessage('Stopped.');
     setStatusState('idle');

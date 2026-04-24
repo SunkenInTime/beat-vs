@@ -1,4 +1,4 @@
-import { evaluate, hush, initStrudel, samples } from '@strudel/web';
+import { evaluate, getTime, hush, initStrudel, samples } from '@strudel/web';
 
 class StrudelEngine {
   private initPromise?: Promise<void>;
@@ -30,6 +30,14 @@ class StrudelEngine {
     }
 
     hush();
+  }
+
+  getCycle(): number {
+    if (!this.isInitialized) {
+      return 0;
+    }
+
+    return getTime();
   }
 }
 
