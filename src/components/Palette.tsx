@@ -57,7 +57,7 @@ export function Palette({ templates }: PaletteProps) {
       <div className="panel__header">
         <p className="panel__eyebrow">Block drawer</p>
         <h2 className="panel__title">Sound Palette</h2>
-        <p className="panel__subtitle">Drag blocks into a track. Drag them back here to trash.</p>
+        <p className="panel__subtitle">Drag nodes onto the canvas. Drag them back here to trash.</p>
       </div>
 
       <div className="palette-group">

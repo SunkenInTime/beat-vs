@@ -1,6 +1,5 @@
 import { BlockCard } from './BlockCard';
 import { DropSlot } from './DropSlot';
-import { makeRepeatContainerId } from '../editor/tree';
 import type { StepBlock } from '../editor/types';
 
 interface StepSequenceProps {
@@ -30,8 +29,6 @@ export function StepSequence({
     <div className="lane__grid" style={{ ['--lane-columns' as string]: cellCount }}>
       {Array.from({ length: cellCount }, (_, index) => {
         const block = blocks[index];
-        const childContainerId =
-          block?.kind === 'repeat' ? makeRepeatContainerId(trackId, block.id) : undefined;
 
         return (
           <DropSlot
@@ -52,18 +49,6 @@ export function StepSequence({
                 accentColor={trackColor}
                 onSelect={onSelect}
               >
-                {block.kind === 'repeat' ? (
-                  <StepSequence
-                    blocks={block.children}
-                    containerId={childContainerId!}
-                    trackId={trackId}
-                    trackColor={trackColor}
-                    selectedBlockId={selectedBlockId}
-                    activeBlockIds={activeBlockIds}
-                    nested
-                    onSelect={onSelect}
-                  />
-                ) : null}
               </BlockCard>
             ) : null}
           </DropSlot>

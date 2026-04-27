@@ -188,7 +188,7 @@ export default function App() {
 
   const runPlayback = async (code: string) => {
     setIsLoading(true);
-    setStatusMessage('Booting Strudel · evaluating pattern…');
+    setStatusMessage('Booting Strudel / evaluating pattern...');
     setStatusState('loading');
 
     try {
@@ -196,7 +196,7 @@ export default function App() {
       lastPlayedCodeRef.current = code;
       setPlaybackCycle(strudelEngine.getCycle());
       setIsPlaying(true);
-      setStatusMessage('Live · pattern playing');
+      setStatusMessage('Live / canvas playing');
       setStatusState('playing');
     } catch (error) {
       console.error(error);
@@ -287,8 +287,8 @@ export default function App() {
               BEAT<span className="accent">·</span>VS
             </h1>
             <p className="masthead__copy">
-              A Scratch-style block language wired into a DAW timeline. Snap puzzle-blocks into
-              tracks, stack them as layers, and let the compiler fire live Strudel patterns.
+              Place beat nodes on a tile canvas. Playback starts at the left edge, sweeps across the
+              grid, and turns the visible arrangement into live Strudel patterns.
             </p>
           </div>
 
